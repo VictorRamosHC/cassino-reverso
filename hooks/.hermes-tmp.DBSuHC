@@ -1,0 +1,182 @@
+'use client';
+
+import { useRef, useEffect, useCallback, useState } from 'react';
+
+interface Particle {
+  x: number; y: number; vx: number; vy: number;
+  life: number; color: string; size: number;
+}
+
+interface Confetti {
+  x: number; y: number; vx: number; vy: number;
+  life: number; color: string; rotation: number; rotationSpeed: number;
+}
+
+interface EffectState {
+  particles: Particle[];
+  confetti: Confetti[];
+  screenShake: number;
+  flashColor: string | null;
+  flashAlpha: number;
+}
+
+export function useParticleEffects() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const stateRef = useRef<EffectState>({
+    particles: [],
+    confetti: [],
+    screenShake: 0,
+    flashColor: null,
+    flashAlpha: 0,
+  });
+  const animFrameRef = useRef<number>(0);
+  const [tick, setTick] = useState(0);
+
+  const triggerWin = useCallback(() => {
+    const s = stateRef.current;
+    setTick(t => t + 1);
+    if (!s) return;
+    for (let i = 0; i < 50; i++) {
+      s.particles.push({
+        x: Math.random() * window.innerWidth,
+        y: window.innerHeight / 2 + (Math.random() - 0.5) * 100,
+        vx: (Math.random() - 0.5) * 12,
+        vy: -Math.random() * 8 - 4,
+        life: 1,
+        color: Math.random() > 0.5 ? '#FFD700' : '#00FF41',
+        size: Math.random() * 4 + 2,
+      });
+    }
+    for (let i = 0; i < 30; i++) {
+      s.confetti.push({
+        x: Math.random() * window.innerWidth,
+        y: -10,
+        vx: (Math.random() - 0.5) * 4,
+        vy: Math.random() * 3 + 2,
+        life: 1,
+        color: ['#FFD700', '#00FF41', '#FF0033', '#FFAA00'][Math.floor(Math.random() * 4)],
+        rotation: Math.random() * 360,
+        rotationSpeed: (Math.random() - 0.5) * 10,
+      });
+    }
+    s.screenShake = 10;
+    s.flashColor = '#00FF41';
+    s.flashAlpha = 0.4;
+  }, []);
+
+  const triggerLoss = useCallback(() => {
+    const s = stateRef.current;
+    setTick(t => t + 1);
+    if (!s) return;
+    s.screenShake = 15;
+    s.flashColor = '#FF0033';
+    s.flashAlpha = 0.3;
+    for (let i = 0; i < 20; i++) {
+      s.particles.push({
+        x: Math.random() * window.innerWidth,
+        y: window.innerHeight / 2 + (Math.random() - 0.5) * 100,
+        vx: (Math.random() - 0.5) * 8,
+        vy: -Math.random() * 6 - 2,
+        life: 1,
+        color: '#FF0033',
+        size: Math.random() * 3 + 1,
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!canvasRef.current || !containerRef.current) return;
+    const ctx = canvasRef.current.getContext('2d');
+    if (!ctx) return;
+
+    const draw = () => {
+      const s = stateRef.current;
+      if (!s) return;
+
+      // Update
+      s.screenShake *= 0.9;
+      if (s.screenShake < 0.5) s.screenShake = 0;
+      if (s.flashAlpha > 0) s.flashAlpha -= 0.02;
+      if (s.flashAlpha < 0) s.flashAlpha = 0;
+
+      // Clear with background
+      ctx.fillStyle = '#050505';
+      ctx.globalAlpha = 0.95;
+      ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+      ctx.globalAlpha = 1;
+
+      // Screen shake offset
+      if (s.screenShake > 0) {
+        const ox = (Math.random() - 0.5) * s.screenShake;
+        const oy = (Math.random() - 0.5) * s.screenShake;
+        ctx.save();
+        ctx.translate(ox, oy);
+      }
+
+      // Draw particles
+      for (let i = s.particles.length - 1; i >= 0; i--) {
+        const pt = s.particles[i];
+        pt.x += pt.vx;
+        pt.y += pt.vy;
+        pt.vy += 0.15;
+        pt.life -= 0.02;
+        if (pt.life <= 0) { s.particles.splice(i, 1); continue; }
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.size * pt.life, 0, Math.PI * 2);
+        ctx.fillStyle = pt.color;
+        ctx.globalAlpha = pt.life;
+        ctx.fill();
+      }
+
+      // Draw confetti
+      for (let i = s.confetti.length - 1; i >= 0; i--) {
+        const c = s.confetti[i];
+        c.x += c.vx;
+        c.y += c.vy;
+        c.vy += 0.1;
+        c.rotation += c.rotationSpeed;
+        c.life -= 0.008;
+        if (c.life <= 0 || c.y > window.innerHeight + 20) { s.confetti.splice(i, 1); continue; }
+        ctx.save();
+        ctx.translate(c.x, c.y);
+        ctx.rotate((c.rotation * Math.PI) / 180);
+        ctx.fillStyle = c.color;
+        ctx.globalAlpha = c.life;
+        ctx.fillRect(-6, -3, 12, 6);
+        ctx.restore();
+      }
+
+      ctx.globalAlpha = 1;
+      ctx.restore();
+
+      // Flash overlay on top
+      if (s.flashAlpha > 0 && s.flashColor) {
+        ctx.fillStyle = s.flashColor;
+        ctx.globalAlpha = s.flashAlpha;
+        ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+        ctx.globalAlpha = 1;
+      }
+
+      animFrameRef.current = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    const handleResize = () => {
+      if (canvasRef.current) {
+        canvasRef.current.width = window.innerWidth;
+        canvasRef.current.height = window.innerHeight;
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      cancelAnimationFrame(animFrameRef.current);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  return { canvasRef, containerRef, triggerWin, triggerLoss };
+}

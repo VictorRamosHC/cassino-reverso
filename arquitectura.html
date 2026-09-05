@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cassino Reverso — Arquitetura</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: #0f0f0f;
+      color: #e8e8e8;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .container { max-width: 1280px; margin: 0 auto; }
+    .header { margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; }
+    .pulse { width: 12px; height: 12px; background: #ff3333; border-radius: 50%; animation: pulse 1.5s infinite; box-shadow: 0 0 12px #ff3333; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
+    h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; color: #ff3333; }
+    .subtitle { color: #888; font-size: 0.875rem; margin-left: 1.75rem; }
+    .diagram-container {
+      background: #161616;
+      border-radius: 1rem;
+      border: 1px solid #ff3333;
+      padding: 1.5rem;
+      overflow-x: auto;
+      box-shadow: 0 0 40px rgba(255, 51, 51, 0.08);
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 2rem; }
+    .card {
+      background: #1a1a1a;
+      border-radius: 0.75rem;
+      border: 1px solid #333;
+      padding: 1.25rem;
+    }
+    .card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .card h3 { font-size: 0.875rem; font-weight: 600; color: #ddd; }
+    .card ul { list-style: none; color: #888; font-size: 0.75rem; }
+    .card li { margin-bottom: 0.375rem; }
+    .footer { text-align: center; margin-top: 1.5rem; color: #555; font-size: 0.75rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="pulse"></div>
+      <h1>CASSINO REVERSO — Arquitetura</h1>
+      <p class="subtitle">App educacional de bets • Turma de TI • 03/09/2026</p>
+    </div>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 1100 720">
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#ff5555" />
+          </marker>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#2a2a2a" stroke-width="0.5"/>
+          </pattern>
+          <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#1a0505"/>
+            <stop offset="100%" stop-color="#0f0f0f"/>
+          </linearGradient>
+          <linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#ffaa00"/>
+            <stop offset="50%" stop-color="#ff8800"/>
+            <stop offset="100%" stop-color="#ff5500"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Background Grid -->
+        <rect width="100%" height="100%" fill="url(#grid)" />
+        <rect width="100%" height="100%" fill="url(#bgGrad)" opacity="0.3"/>
+
+        <!-- Title region -->
+        <text x="30" y="42" fill="#ff3333" font-size="11" font-weight="700" letter-spacing="2">CASSINO REVERSO · ARQUITETURA</text>
+
+        <!-- ============================================================ -->
+        <!-- USER / DEVICE -->
+        <!-- ============================================================ -->
+        <rect x="30" y="80" width="120" height="70" rx="8" fill="rgba(255,51,51,0.12)" stroke="#ff3333" stroke-width="2"/>
+        <text x="90" y="108" fill="#ff3333" font-size="13" font-weight="700" text-anchor="middle">📱 USUÁRIO</text>
+        <text x="90" y="126" fill="#888" font-size="10" text-anchor="middle">Celular / Web</text>
+        <text x="90" y="138" fill="#888" font-size="9" text-anchor="middle">Next.js App</text>
+
+        <!-- ============================================================ -->
+        <!-- FRONTEND -->
+        <!-- ============================================================ -->
+        <rect x="190" y="80" width="180" height="120" rx="10" fill="rgba(255,51,51,0.06)" stroke="#ff3333" stroke-width="1.5"/>
+        <text x="280" y="105" fill="#ff3333" font-size="11" font-weight="700" text-anchor="middle">🖥️ FRONT-END</text>
+        <text x="280" y="122" fill="#ccc" font-size="12" font-weight="600" text-anchor="middle">app/page.tsx</text>
+        <text x="280" y="140" fill="#888" font-size="9" text-anchor="middle">• Tela de login</text>
+        <text x="280" y="152" fill="#888" font-size="9" text-anchor="middle">• Dashboard</text>
+        <text x="280" y="164" fill="#888" font-size="9" text-anchor="middle">• Jogos + Animations</text>
+        <text x="280" y="176" fill="#ff8800" font-size="8" text-anchor="middle">React + TS</text>
+
+        <!-- ============================================================ -->
+        <!-- Arrow: User → Frontend -->
+        <line x1="150" y1="115" x2="188" y2="115" stroke="#ff3333" stroke-width="2" marker-end="url(#arrow)"/>
+
+        <!-- ============================================================ -->
+        <!-- API ROUTES -->
+        <!-- ============================================================ -->
+        <rect x="410" y="80" width="180" height="140" rx="10" fill="rgba(255,136,0,0.07)" stroke="#ff8800" stroke-width="1.5"/>
+        <text x="500" y="105" fill="#ff8800" font-size="11" font-weight="700" text-anchor="middle">⚙️ API ROUTES</text>
+        <text x="500" y="122" fill="#ccc" font-size="10" font-weight="600" text-anchor="middle">app/api/</text>
+        <text x="500" y="140" fill="#888" font-size="9" text-anchor="middle">POST /api/auth/login</text>
+        <text x="500" y="152" fill="#888" font-size="9" text-anchor="middle">POST /api/auth/register</text>
+        <text x="500" y="164" fill="#888" font-size="9" text-anchor="middle">POST /api/games</text>
+        <text x="500" y="176" fill="#888" font-size="9" text-anchor="middle">GET /api/dashboard</text>
+        <text x="500" y="188" fill="#888" font-size="9" text-anchor="middle">POST /api/auth/logout</text>
+        <text x="500" y="200" fill="#ff8800" font-size="8" text-anchor="middle">Server-side Next.js</text>
+
+        <!-- Arrow: Frontend → API -->
+        <line x1="370" y1="140" x2="408" y2="140" stroke="#ff8800" stroke-width="2" marker-end="url(#arrow)"/>
+
+        <!-- ============================================================ -->
+        <!-- AUTH LAYER -->
+        <!-- ============================================================ -->
+        <rect x="630" y="80" width="160" height="110" rx="10" fill="rgba(255,51,51,0.08)" stroke="#ff3333" stroke-width="1.5"/>
+        <text x="710" y="105" fill="#ff3333" font-size="11" font-weight="700" text-anchor="middle">🔐 AUTH</text>
+        <text x="710" y="122" fill="#ccc" font-size="10" font-weight="600" text-anchor="middle">lib/auth.ts</text>
+        <text x="710" y="140" fill="#888" font-size="9" text-anchor="middle">• JWT assinado</text>
+        <text x="710" y="152" fill="#888" font-size="9" text-anchor="middle">• bcrypt hash</text>
+        <text x="710" y="164" fill="#888" font-size="9" text-anchor="middle">• Cookie HTTP-only</text>
+        <text x="710" y="176" fill="#ff3333" font-size="8" text-anchor="middle">Sessão 24h</text>
+
+        <!-- Arrow: API → Auth -->
+        <line x1="590" y1="140" x2="628" y2="140" stroke="#ff3333" stroke-width="2" marker-end="url(#arrow)"/>
+
+        <!-- ============================================================ -->
+        <!-- GAME ENGINE -->
+        <!-- ============================================================ -->
+        <rect x="630" y="220" width="160" height="120" rx="10" fill="rgba(0,255,100,0.06)" stroke="#00ff64" stroke-width="1.5"/>
+        <text x="710" y="245" fill="#00ff64" font-size="11" font-weight="700" text-anchor="middle">🎲 GAME ENGINE</text>
+        <text x="710" y="262" fill="#ccc" font-size="10" font-weight="600" text-anchor="middle">lib/game-engine.ts</text>
+        <text x="710" y="280" fill="#888" font-size="9" text-anchor="middle">• Slot (18% win)</text>
+        <text x="710" y="292" fill="#888" font-size="9" text-anchor="middle">• Bicho (68% win)</text>
+        <text x="710" y="304" fill="#888" font-size="9" text-anchor="middle">• Dados (70% loss)</text>
+        <text x="710" y="316" fill="#00ff64" font-size="8" text-anchor="middle">RNG: crypto.randomInt</text>
+
+        <!-- Arrow: API → Game Engine -->
+        <path d="M 560 160 L 560 240 Q 560 250 580 250 L 628 250" fill="none" stroke="#ff8800" stroke-width="2" marker-end="url(#arrow)"/>
+
+        <!-- ============================================================ -->
+        <!-- DATABASE -->
+        <!-- ============================================================ -->
+        <rect x="830" y="220" width="160" height="120" rx="10" fill="rgba(100,100,255,0.06)" stroke="#6464ff" stroke-width="1.5"/>
+        <text x="910" y="245" fill="#6464ff" font-size="11" font-weight="700" text-anchor="middle">💾 BANCO SQLite</text>
+        <text x="910" y="262" fill="#ccc" font-size="10" font-weight="600" text-anchor="middle">.data/cassino.db</text>
+        <text x="910" y="280" fill="#888" font-size="9" text-anchor="middle">• users</text>
+        <text x="910" y="292" fill="#888" font-size="9" text-anchor="middle">• sessions</text>
+        <text x="910" y="304" fill="#888" font-size="9" text-anchor="middle">• rounds</text>
+        <text x="910" y="316" fill="#888" font-size="9" text-anchor="middle">• transactions</text>
+        <text x="910" y="328" fill="#6464ff" font-size="8" text-anchor="middle">better-sqlite3</text>
+
+        <!-- Arrows: Engine + Auth → Database -->
+        <line x1="790" y1="280" x2="828" y2="270" stroke="#ff8800" stroke-width="2" marker-end="url(#arrow)"/>
+        <line x1="790" y1="220" x2="828" y2="260" stroke="#ff3333" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+
+        <!-- ============================================================ -->
+        <!-- BOUNDARY: SERVER-SIDE -->
+        <!-- ============================================================ -->
+        <rect x="400" y="50" width="610" height="310" rx="14" fill="none" stroke="#ff8800" stroke-width="1" stroke-dasharray="8,5" opacity="0.5"/>
+        <text x="410" y="68" fill="#ff8800" font-size="9" font-weight="700" letter-spacing="2">SERVIDOR (Next.js App Router — seguro por padrão)</text>
+
+        <!-- ============================================================ -->
+        <!-- LEGEND -->
+        <!-- ============================================================ -->
+        <text x="30" y="260" fill="#fff" font-size="11" font-weight="700">LEGENDA</text>
+
+        <rect x="30" y="275" width="16" height="10" rx="2" fill="rgba(255,51,51,0.12)" stroke="#ff3333" stroke-width="1"/>
+        <text x="52" y="283" fill="#888" font-size="9">Front-end (React)</text>
+
+        <rect x="30" y="292" width="16" height="10" rx="2" fill="rgba(255,136,0,0.07)" stroke="#ff8800" stroke-width="1"/>
+        <text x="52" y="300" fill="#888" font-size="9">API Routes (Server)</text>
+
+        <rect x="30" y="309" width="16" height="10" rx="2" fill="rgba(255,51,51,0.08)" stroke="#ff3333" stroke-width="1"/>
+        <text x="52" y="317" fill="#888" font-size="9">Auth / Segurança</text>
+
+        <rect x="170" y="275" width="16" height="10" rx="2" fill="rgba(0,255,100,0.06)" stroke="#00ff64" stroke-width="1"/>
+        <text x="192" y="283" fill="#888" font-size="9">Game Engine</text>
+
+        <rect x="170" y="292" width="16" height="10" rx="2" fill="rgba(100,100,255,0.06)" stroke="#6464ff" stroke-width="1"/>
+        <text x="192" y="300" fill="#888" font-size="9">Banco SQLite</text>
+
+        <line x1="30" y1="334" x2="46" y2="334" stroke="#ff8800" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <text x="52" y="338" fill="#888" font-size="9">Requisição HTTP</text>
+
+        <line x1="170" y1="334" x2="186" y2="334" stroke="#ff3333" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+        <text x="192" y="338" fill="#888" font-size="9">Sessão / Auth</text>
+
+        <!-- ============================================================ -->
+        <!-- FLOW LABELS -->
+        <!-- ============================================================ -->
+        <text x="30" y="380" fill="#ff3333" font-size="10" font-weight="700">FLUXO DE UMA RODADA</text>
+
+        <text x="30" y="400" fill="#888" font-size="9">1. Usuário escolhe jogo e aposta → Front-end envia POST /api/games</text>
+        <text x="30" y="415" fill="#888" font-size="9">2. Servidor valida sessão JWT (auth.ts) → checa se usuário existe e está logado</text>
+        <text x="30" y="430" fill="#888" font-size="9">3. Game Engine (game-engine.ts) sorteia resultado com crypto.randomInt (seguro)</text>
+        <text x="30" y="445" fill="#888" font-size="9">4. Transação SQLite atômica: update saldo + insert rounds + insert transactions</text>
+        <text x="30" y="460" fill="#888" font-size="9">5. Resposta com novo saldo + snapshot → Front-end atualiza tela com animação</text>
+
+        <!-- ============================================================ -->
+        <!-- SECURITY CALLOUT -->
+        <!-- ============================================================ -->
+        <rect x="30" y="485" width="1040" height="60" rx="8" fill="rgba(255,51,51,0.05)" stroke="#ff3333" stroke-width="1" stroke-dasharray="6,3"/>
+        <text x="45" y="508" fill="#ff3333" font-size="10" font-weight="700">🔒 O que NÃO confia no navegador:</text>
+        <text x="45" y="525" fill="#888" font-size="9">Nenhum resultado, saldo, ou lógica de jogo é confiável ao cliente. Tudo é decidido e gravado no servidor.</text>
+        <text x="45" y="538" fill="#888" font-size="9">O navegador só recebe a resposta final — nunca pode hackear o RNG ou o saldo.</text>
+
+        <!-- ============================================================ -->
+        <!-- TECH STACK MINI CARDS -->
+        <!-- ============================================================ -->
+        <text x="30" y="575" fill="#ff8800" font-size="10" font-weight="700">STACK TECNOLÓGICA</text>
+
+        <rect x="30" y="590" width="240" height="50" rx="6" fill="#1a1a1a" stroke="#333" stroke-width="1"/>
+        <text x="45" y="610" fill="#888" font-size="8">Front-end</text>
+        <text x="45" y="625" fill="#ff3333" font-size="11" font-weight="600">Next.js 16 + React 19 + TypeScript</text>
+
+        <rect x="290" y="590" width="240" height="50" rx="6" fill="#1a1a1a" stroke="#333" stroke-width="1"/>
+        <text x="305" y="610" fill="#888" font-size="8">Server / API</text>
+        <text x="305" y="625" fill="#ff8800" font-size="11" font-weight="600">Next.js App Router + Node.js</text>
+
+        <rect x="550" y="590" width="240" height="50" rx="6" fill="#1a1a1a" stroke="#333" stroke-width="1"/>
+        <text x="565" y="610" fill="#888" font-size="8">Banco de dados</text>
+        <text x="565" y="625" fill="#6464ff" font-size="11" font-weight="600">SQLite via better-sqlite3</text>
+
+        <rect x="810" y="590" width="260" height="50" rx="6" fill="#1a1a1a" stroke="#333" stroke-width="1"/>
+        <text x="825" y="610" fill="#888" font-size="8">Auth + Segurança</text>
+        <text x="825" y="625" fill="#00ff64" font-size="11" font-weight="600">jose (JWT) + bcrypt + cookies HTTP-only</text>
+
+        <!-- ============================================================ -->
+        <!-- DEPLOY callout -->
+        <!-- ============================================================ -->
+        <rect x="30" y="660" width="1040" height="30" rx="6" fill="rgba(255,136,0,0.05)" stroke="#ff8800" stroke-width="1"/>
+        <text x="45" y="680" fill="#ff8800" font-size="9" font-weight="600">🚀 Deploy no Vercel: conectar repositório GitHub → configurar JWT_SECRET → deploy automático</text>
+      </svg>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-header"><div class="dot" style="background:#ff3333"></div><h3>Front-end</h3></div>
+        <ul>
+          <li>• React + TypeScript</li>
+          <li>• Componentização por jogo</li>
+          <li>• Mobile-first</li>
+          <li>• Animações CSS/JS</li>
+          <li>• Touch feedback</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="dot" style="background:#ff8800"></div><h3>Back-end (Server)</h3></div>
+        <ul>
+          <li>• API Routes do Next.js</li>
+          <li>• Lógica no servidor</li>
+          <li>• Transações SQLite</li>
+          <li>• Rate limiting basic</li>
+          <li>• Sem dependências externas</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="dot" style="background:#00ff64"></div><h3>Segurança</h3></div>
+        <ul>
+          <li>• JWT assinado (jose)</li>
+          <li>• Senhas bcrypt</li>
+          <li>• Cookie HTTP-only</li>
+          <li>• Nada confiável no cliente</li>
+          <li>• Transação atômica por rodada</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="footer">
+      Cassino Reverso • Projeto educacional de TI • Turma de tecnologia • 03/09/2026
+    </p>
+  </div>
+</body>
+</html>
