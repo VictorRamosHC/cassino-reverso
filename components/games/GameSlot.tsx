@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { formatBRL } from '@/lib/utils-data';
-import { SlotGameData } from '@/lib/game-engine';
 
 interface Props {
   onPlay: () => void;
@@ -29,7 +28,7 @@ export default function GameSlot({ onPlay, busy, balance, onWin, onLoss }: Props
     if (busy || balance < 10) return;
     setRolling(true);
     setNearMiss(false);
-    const count = 0;
+    let count = 0;
     intervalRef.current = setInterval(() => {
       const sym = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
       setDisplaySymbols([
@@ -37,6 +36,7 @@ export default function GameSlot({ onPlay, busy, balance, onWin, onLoss }: Props
         SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
         SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
       ]);
+      count++;
       if (count > 15) {
         clearInterval(intervalRef.current!);
         setRolling(false);
@@ -46,18 +46,33 @@ export default function GameSlot({ onPlay, busy, balance, onWin, onLoss }: Props
   }, [busy, balance, onPlay]);
 
   return (
-    <div className="w-full max-w-md mx-auto text-center">
-      <p className="text-xs text-muted-foreground font-mono mb-4">Saldo: {formatBRL(balance)}</p>
-      <div className="flex gap-3 justify-center mb-6 relative">
+    <div className="flex flex-col items-center gap-4 py-4">
+      <p className="text-xs text-muted-foreground font-mono">
+        Saldo: {formatBRL(balance)}
+      </p>
+      <div className="flex gap-3 justify-center">
         {[0, 1, 2].map(i => (
-          <div key={i} className={`slot-display w-20 h-20 rounded-xl bg-black border-2 border-gold/50 flex items-center justify-center overflow-hidden ${nearMiss ? 'border-red-500' : ''}`}>
-            <span className={`font-mono text-3xl font-bold ${nearMiss ? 'neon-red' : 'text-gold'} ${rolling ? 'slot-rolling' : ''}`}>
+          <div
+            key={i}
+            className={`slot-display w-24 h-24 rounded-xl bg-black border-2 border-gold/50 flex items-center justify-center overflow-hidden ${
+              nearMiss ? 'border-red-500' : ''
+            }`}
+          >
+            <span
+              className={`font-mono text-3xl font-bold ${
+                nearMiss ? 'neon-red' : 'text-gold'
+              } ${rolling ? 'slot-rolling' : ''}`}
+            >
               {displaySymbols[i] || '?'}
             </span>
           </div>
         ))}
       </div>
-      <button onClick={handleSpin} disabled={busy || balance < 10} className="bet-btn w-full">
+      <button
+        onClick={handleSpin}
+        disabled={busy || balance < 10}
+        className="bet-btn w-full max-w-xs"
+      >
         {busy ? '🎰 Girando…' : '🎰 GIRAR'}
       </button>
     </div>

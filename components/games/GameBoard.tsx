@@ -16,7 +16,6 @@ export default function GameBoard({ onPlay, busy, balance, onWin, onLoss }: Prop
   const [message, setMessage] = useState('');
   const [isNegative, setIsNegative] = useState(false);
   const [screenShake, setScreenShake] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleRoll = useCallback(() => {
     if (busy || balance < 10) return;
@@ -37,31 +36,45 @@ export default function GameBoard({ onPlay, busy, balance, onWin, onLoss }: Prop
     }, 800);
   }, [busy, balance, onPlay, onLoss]);
 
-  useEffect(() => {
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, []);
-
   return (
-    <div className={`w-full max-w-sm mx-auto text-center transition-transform duration-100 ${screenShake ? 'translate-x-1' : ''}`}>
-      <p className="text-xs text-muted-foreground font-mono mb-4">Saldo: {formatBRL(balance)}</p>
-      <div className="mb-6">
+    <div className={`flex flex-col items-center gap-4 py-4 transition-transform duration-100 ${
+      screenShake ? 'translate-x-1' : ''
+    }`}>
+      <p className="text-xs text-muted-foreground font-mono">
+        Saldo: {formatBRL(balance)}
+      </p>
+      <div className="flex flex-col items-center gap-3">
         <div className="inline-block w-28 h-28 rounded-xl bg-black border-4 border-gold/50 flex items-center justify-center">
           {lastRoll ? (
-            <span className="font-mono text-5xl font-bold text-gold neon-text">{lastRoll}</span>
+            <span className="font-mono text-5xl font-bold text-gold neon-text">
+              {lastRoll}
+            </span>
           ) : (
             <span className="text-5xl">🎲</span>
           )}
         </div>
+        {message && (
+          <div
+            className={`rounded-xl p-3 text-sm ${
+              isNegative
+                ? 'danger-zone text-red-400'
+                : 'bg-green-500/10 border border-green-500/30 text-green-400'
+            }`}
+          >
+            {message}
+          </div>
+        )}
       </div>
-      <button onClick={handleRoll} disabled={busy || balance < 10} className="bet-btn w-full">
+      <button
+        onClick={handleRoll}
+        disabled={busy || balance < 10}
+        className="bet-btn w-full max-w-xs"
+      >
         {busy ? '🎲 Rolando…' : '🎲 JOGAR'}
       </button>
-      {message && (
-        <div className={`mt-4 p-4 rounded-xl text-sm ${isNegative ? 'danger-zone text-red-400' : 'bg-green-500/10 border border-green-500/30 text-green-400'}`}>
-          {message}
-        </div>
-      )}
-      <p className="mt-4 text-xs text-muted-foreground">70% das casas são negativas — a banca absorve sua aposta.</p>
+      <p className="text-xs text-muted-foreground text-center">
+        70% das casas são negativas — a banca absorve sua aposta.
+      </p>
     </div>
   );
 }

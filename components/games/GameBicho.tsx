@@ -34,23 +34,38 @@ export default function GameBicho({ onPlay, busy, balance, onWin, onLoss }: Prop
   }, [busy, selected, balance, onPlay]);
 
   return (
-    <div className="w-full max-w-lg mx-auto">
-      <p className="text-center text-xs text-muted-foreground font-mono mb-3">Saldo: {formatBRL(balance)}</p>
-      <p className="text-center text-sm text-muted-foreground mb-3">Escolha um animal:</p>
-      <div className="grid grid-cols-5 gap-2 mb-4">
+    <div className="flex flex-col items-center gap-4 py-4">
+      <p className="text-xs text-muted-foreground font-mono">
+        Saldo: {formatBRL(balance)}
+      </p>
+      <p className="text-center text-sm text-muted-foreground">Escolha um animal:</p>
+      <div className="grid grid-cols-5 gap-2 max-w-md w-full">
         {ANIMALS.map(a => (
           <button
             key={a.id}
             onClick={() => handlePick(a.id)}
             disabled={busy || picking}
-            className={`animal-card p-2 text-center transition-all ${selected === a.id ? 'selected border-gold border-2' : ''} ${busy || picking ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`animal-card p-2 text-center transition-all ${
+              selected === a.id ? 'selected border-gold border-2' : ''
+            } ${busy || picking ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <span className="text-xl block mb-1">{a.emoji}</span>
-            <span className="text-xs font-mono text-muted-foreground">{a.id.slice(0, 3)}</span>
+            <span className="text-xs font-mono text-muted-foreground">
+              {a.id.slice(0, 3)}
+            </span>
           </button>
         ))}
       </div>
-      <button onClick={handleSpin} disabled={busy || picking || !selected || balance < 10} className="bet-btn w-full">
+      {lastAnimal && (
+        <p className="text-center text-sm font-mono text-gold">
+          Último: {lastAnimal}
+        </p>
+      )}
+      <button
+        onClick={handleSpin}
+        disabled={busy || picking || !selected || balance < 10}
+        className="bet-btn w-full max-w-xs"
+      >
         🐴 APOSTAR
       </button>
     </div>

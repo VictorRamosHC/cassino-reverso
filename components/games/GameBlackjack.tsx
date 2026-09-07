@@ -1,12 +1,7 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { ShieldCheck as Winner } from 'lucide-react';
-
-// ----------------------------------------------------------------------
-// BLACKJACK — lógica inteiramente no client, assim como Slot, Bicho & Board
-// no backend apenas registra o lance final (onPlay) com o delta de saldo.
-// ----------------------------------------------------------------------
 
 const SUITS = ['♠', '♥', '♦', '♣'];
 const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
@@ -39,28 +34,20 @@ function softTotal(cards: Card[]): number {
   while (t > 21 && aces < countAces(cards)) { t -= 10; aces++; }
   return t;
 }
+
 function countAces(cards: Card[]): number {
   let n = 0;
   for (const c of cards) if (c.rank === 'A') n++;
   return n;
 }
+
 function score(cards: Card[]): number { return softTotal(cards); }
 function isBlackjack(cards: Card[]): boolean { return cards.length === 2 && score(cards) === 21; }
-
-function handLabel(cards: Card[]): string {
-  const s = score(cards);
-  if (s === 21 && cards.length === 2) return 'BLACKJACK';
-  if (s > 21) return 'ESTOURADO';
-  return String(s);
-}
 
 function suitColor(suit: string): string {
   return suit === '♥' || suit === '♦' ? 'text-red-400' : 'text-white';
 }
 
-// ----------------------------------------------------------------------
-// EXPORT
-// ----------------------------------------------------------------------
 interface Props {
   onPlay: (data: { game: 'blackjack'; bet_amount: number; delta_cents: number }) => void;
   onWin: () => void;
@@ -77,15 +64,14 @@ export default function GameBlackjack({ onPlay, onWin, onLoss, busy, balance }: 
   const [message, setMessage] = useState('');
   const [resultColor, setResultColor] = useState<'gold'|'green'|'red'>('gold');
   const [log, setLog] = useState<string[]>([]);
-  const betAmount = 10; // R$10 por mão, fixo para manter o padrão simples
+  const betAmount = 10;
 
   const startRound = useCallback(() => {
     if (balance < betAmount) { setMessage('Saldo insuficiente para apostar R$10,00'); return; }
     const d = shuffle(newDeck());
-    // duas cartas para o jogador, duas para o dealer (1 escondida)
     const h1 = d[0], h2 = d[1], d1 = d[2], d2 = d[3];
     const newHand = [h1, h2];
-    const newDealer = [d1, { ...d2, faceUp: false }]; // segunda carta do dealer vira face-down
+    const newDealer = [d1, { ...d2, faceUp: false }];
     setDeck(d.slice(4));
     setHand(newHand);
     setDealer(newDealer);
@@ -93,10 +79,9 @@ export default function GameBlackjack({ onPlay, onWin, onLoss, busy, balance }: 
     setMessage('');
     const bjP = isBlackjack(newHand), bjD = isBlackjack(newDealer);
     if (bjP || bjD) {
-      // revela carta do dealer
       setDealer(prev => prev.map((c,i) => i === 1 ? { ...c, faceUp: true } : c));
       if (bjP && bjD) {
-        setMessage('Empate! Ambos Blackjack. Linha depois de linhas.');
+        setMessage('Empate! Ambos Blackjack.');
         setResultColor('gold');
         setPhase('result');
         onPlay({ game: 'blackjack', bet_amount: betAmount, delta_cents: 0 });
@@ -125,14 +110,11 @@ export default function GameBlackjack({ onPlay, onWin, onLoss, busy, balance }: 
     const d = deck;
     if (d.length === 0) { setMessage('Baralho esgotado.'); return; }
     const card = d[0];
-    const newDeck = d.slice(1);
-    setDeck(newDeck);
+    setDeck(d.slice(1));
     const newHand = [...hand, card];
     setHand(newHand);
     logMsg(`Você recebeu ${card.rank}${card.suit} — total: ${score(newHand)}`);
     if (score(newHand) > 21) {
-      // estourou
-      // revela carta do dealer
       setDealer(prev => prev.map(c => ({ ...c, faceUp: true })));
       setMessage(`Estourou com ${score(newHand)}! Dealer ganhou.`);
       setResultColor('red');
@@ -140,33 +122,25 @@ export default function GameBlackjack({ onPlay, onWin, onLoss, busy, balance }: 
       onPlay({ game: 'blackjack', bet_amount: betAmount, delta_cents: -betAmount * 100 });
       onLoss();
     } else if (score(newHand) === 21) {
-      // faz o dealer jogar
       logMsg('Blackjack! Dealer joga...');
       dealerPlay(newHand, dealer, d.slice(1));
-    } else {
-      // ok, continua
     }
   }, [phase, deck, hand, dealer, onPlay, onLoss]);
 
   const stand = useCallback(() => {
     if (phase !== 'cards') return;
-    // revela carta do dealer
     setDealer(prev => prev.map(c => ({ ...c, faceUp: true })));
-    const d = deck;
-    // dealer joga
-    dealerPlay(hand, dealer, d);
+    dealerPlay(hand, dealer, deck);
   }, [phase, deck, hand, dealer, onPlay, onWin, onLoss]);
 
   function dealerPlay(playerHandLocal: Card[], dealerLocal: Card[], d: Card[]): void {
     let currentDeck = d;
     let currentDealer = [...dealerLocal];
-    // revela carta do dealer já foi feita antes de chamar
-    // dealer regra: compra enquanto tiver < 17
     const step = () => {
       const ds = score(currentDealer);
       if (ds < 17) {
         if (currentDeck.length === 0) {
-          setMessage(`Dealer não pode mais comprar (baralho acabou). Dealer: ${ds} vs Você: ${score(playerHandLocal)}`);
+          setMessage(`Dealer não pode mais comprar. Dealer: ${ds} vs Você: ${score(playerHandLocal)}`);
           finalize(playerHandLocal, currentDealer, currentDeck);
           return;
         }
@@ -174,7 +148,6 @@ export default function GameBlackjack({ onPlay, onWin, onLoss, busy, balance }: 
         currentDeck = currentDeck.slice(1);
         currentDealer = [...currentDealer, card];
         logMsg(`Dealer comprou ${card.rank}${card.suit} — total: ${score(currentDealer)}`);
-        // usar setTimeout para simular "atraso" visual
         setTimeout(step, 400);
       } else {
         finalize(playerHandLocal, currentDealer, currentDeck);
@@ -186,8 +159,7 @@ export default function GameBlackjack({ onPlay, onWin, onLoss, busy, balance }: 
   function finalize(playerCards: Card[], dealerCards: Card[], remainingDeck: Card[]): void {
     const pScore = score(playerCards);
     const dScore = score(dealerCards);
-    setDeck(remainingDeck); // atualiza o deck remanescente
-    // dealer show vale para o estado
+    setDeck(remainingDeck);
     setDealer(dealerCards.map(c => ({ ...c, faceUp: true })));
 
     if (dScore > 21) {
@@ -196,7 +168,7 @@ export default function GameBlackjack({ onPlay, onWin, onLoss, busy, balance }: 
       onPlay({ game: 'blackjack', bet_amount: betAmount, delta_cents: Math.round(betAmount * 1.0 * 100) });
       onWin();
     } else if (pScore > dScore) {
-      setMessage(`Você venceu! ${pScore} vs ${dScore}. Ganhou 100% da aposta.`);
+      setMessage(`Você venceu! ${pScore} vs ${dScore}. Ganhou 100%.`);
       setResultColor('green');
       onPlay({ game: 'blackjack', bet_amount: betAmount, delta_cents: Math.round(betAmount * 1.0 * 100) });
       onWin();
@@ -213,9 +185,6 @@ export default function GameBlackjack({ onPlay, onWin, onLoss, busy, balance }: 
     setPhase('result');
   }
 
-  // ------------------------------------------------------------------
-  // RENDER
-  // ------------------------------------------------------------------
   const renderCardInner = (c: Card, faceDown?: boolean) => {
     if (!c) return null;
     const down = faceDown ? ' card-down' : '';
@@ -230,23 +199,29 @@ export default function GameBlackjack({ onPlay, onWin, onLoss, busy, balance }: 
   };
 
   return (
-    <div className="space-y-4">
-      {/* MENSAGEM */}
+    <div className="flex flex-col items-center gap-3 py-4">
+      <p className="text-xs text-muted-foreground font-mono">
+        Saldo: {balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+      </p>
+
       {message && (
-        <div className={`rounded-lg p-3 text-sm font-mono ${resultColor === 'green' ? 'border border-green-500/50 bg-green-500/10 text-green-300' : resultColor === 'red' ? 'border border-red-500/50 bg-red-500/10 text-red-300' : 'border border-gold/50 bg-gold/10 text-gold'}`}>
+        <div className={`rounded-lg p-3 text-sm font-mono w-full ${
+          resultColor === 'green' ? 'border border-green-500/50 bg-green-500/10 text-green-300' :
+          resultColor === 'red' ? 'border border-red-500/50 bg-red-500/10 text-red-300' :
+          'border border-gold/50 bg-gold/10 text-gold'
+        }`}>
           {message}
         </div>
       )}
 
-      {/* LÓGICA VISUAL */}
       {phase === 'idle' && (
-        <div className="flex flex-col items-center justify-center py-6 text-center">
-          <div className="text-6xl mb-2">🃏</div>
+        <div className="flex flex-col items-center justify-center py-4 text-center">
+          <div className="text-5xl mb-2">🃏</div>
           <p className="text-muted-foreground text-sm font-mono">Blackjack contra a banca</p>
           <button
             onClick={startRound}
             disabled={busy || balance < betAmount}
-            className="gold-sheen mt-3 px-6 py-2 rounded-lg font-mono font-bold text-white"
+            className="gold-sheen mt-2 px-6 py-2 rounded-lg font-mono font-bold text-white"
           >
             {busy ? 'Aguarde…' : `Iniciar • R$${betAmount}`}
           </button>
@@ -254,24 +229,29 @@ export default function GameBlackjack({ onPlay, onWin, onLoss, busy, balance }: 
       )}
 
       {(phase === 'cards' || phase === 'result') && (
-        <div className="space-y-4 py-2">
-          {/* DEALER */}
+        <div className="space-y-3 w-full max-w-md">
           <div className="space-y-1">
-            <p className="text-xs font-mono tracking-widest text-gold uppercase">Dealer <span className="text-muted-foreground normal-case">({score(dealer.filter(c=>c.faceUp))} pts {score(dealer.filter(c=>c.faceUp)) > 21 ? '💥' : ''})</span></p>
+            <p className="text-xs font-mono tracking-widest text-gold uppercase">
+              Dealer <span className="text-muted-foreground normal-case">
+                ({score(dealer.filter(c=>c.faceUp))} pts {score(dealer.filter(c=>c.faceUp)) > 21 ? '💥' : ''})
+              </span>
+            </p>
             <div className="flex flex-wrap gap-2 justify-center">
               {dealer.map((c,i) => renderCardInner(c, i === 1 && phase === 'cards' ? true : false))}
             </div>
           </div>
 
-          {/* JOGADOR */}
           <div className="space-y-1">
-            <p className="text-xs font-mono tracking-widest text-gold uppercase">Você <span className="text-muted-foreground normal-case">({score(hand)} pts {score(hand) > 21 ? '💥' : ''})</span></p>
+            <p className="text-xs font-mono tracking-widest text-gold uppercase">
+              Você <span className="text-muted-foreground normal-case">
+                ({score(hand)} pts {score(hand) > 21 ? '💥' : ''})
+              </span>
+            </p>
             <div className="flex flex-wrap gap-2 justify-center">
               {hand.map(c => renderCardInner(c, false))}
             </div>
           </div>
 
-          {/* AÇÕES */}
           {phase === 'cards' && (
             <div className="flex justify-center gap-3 pt-2">
               <button
@@ -293,22 +273,10 @@ export default function GameBlackjack({ onPlay, onWin, onLoss, busy, balance }: 
         </div>
       )}
 
-      {/* LOG MINI */}
       {log.length > 0 && (
-        <div className="max-h-[80px] overflow-y-auto text-xs font-mono text-muted-foreground space-y-1 leading-tight">
+        <div className="max-h-[60px] overflow-y-auto text-xs font-mono text-muted-foreground space-y-1 leading-tight w-full max-w-md">
           {log.map((l,i) => <div key={i}>{l}</div>)}
         </div>
-      )}
-
-      {/* REINICIAR */}
-      {phase === 'result' && (
-        <button
-          onClick={startRound}
-          disabled={busy}
-          className="w-full gold-sheen py-3 rounded-lg font-mono font-bold text-white text-sm"
-        >
-          {busy ? 'Aguarde…' : 'Nova mão • R$10'}
-        </button>
       )}
     </div>
   );

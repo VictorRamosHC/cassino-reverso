@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Trophy, Coins } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import { formatBRL } from '@/lib/utils-data';
 import { playRoulette } from '@/lib/game-engine';
 
@@ -15,7 +15,6 @@ export default function GameRoulette({ onPlay, busy, balance }: {
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<{ number: number; color: string; won: boolean; payout: number; text: string } | null>(null);
   const [history, setHistory] = useState<{ number: number; color: string }[]>([]);
-  const spinTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const colors: { id: typeof betType; label: string; css: string }[] = [
     { id: 'numero', label: 'Número', css: 'text-gold' },
@@ -39,14 +38,8 @@ export default function GameRoulette({ onPlay, busy, balance }: {
     setSpinning(true);
     setResult(null);
 
-    // Chama o backend
     const payload: any = { game: 'roulette', betType, value: value !== null ? value : undefined };
-    // Roda direto chamando onPlay (que no page faz o fetch e atualiza snapshot)
     onPlay(payload).then((d: any) => {
-      if (d?.snapshot) {
-        // Atualiza o contexto de balance via o próprio onPlay já retorna a snapshot
-        // O page.tsx faz o loadDashboard após onPlay, então balance é atualizado no componente pai
-      }
       const won = d?.won ?? false;
       const payout = won ? betAmount * (d?.multiplier ?? 0) : 0;
       const outcomeText = d?.outcomeText ?? '';
@@ -61,16 +54,14 @@ export default function GameRoulette({ onPlay, busy, balance }: {
     });
   }, [busy, balance, betAmount, spinning, betType, value, onPlay]);
 
-  useEffect(() => {
-    return () => {
-      if (spinTimeout.current) clearTimeout(spinTimeout.current);
-    };
-  }, []);
-
   return (
-    <div className="w-full max-w-md mx-auto">
+    <div className="flex flex-col items-center gap-4 py-4">
+      <p className="text-xs text-muted-foreground font-mono">
+        Saldo: {formatBRL(balance)}
+      </p>
+
       {/* ROLETA VISUAL */}
-      <div className="relative w-56 h-56 mx-auto mb-4 rounded-full border-4 border-gold/40 overflow-hidden bg-black shadow-2xl">
+      <div className="relative w-48 h-48 rounded-full border-4 border-gold/40 overflow-hidden bg-black shadow-2xl">
         {/* LEDs superiores */}
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex gap-2">
           <span className={`w-2 h-2 rounded-full ${spinning ? 'bg-red-500 animate-pulse' : 'bg-gray-700'}`}></span>
@@ -81,7 +72,7 @@ export default function GameRoulette({ onPlay, busy, balance }: {
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center">
             <div
-              className={`text-7xl font-black font-mono drop-shadow-2xl ${
+              className={`text-6xl font-black font-mono drop-shadow-2xl ${
                 result?.color === 'red' ? 'text-red-500' : result?.color === 'black' ? 'text-gray-100' : 'text-green-400'
               } ${spinning ? 'animate-pulse' : ''}`}
             >
@@ -99,7 +90,7 @@ export default function GameRoulette({ onPlay, busy, balance }: {
       </div>
 
       {/* Tipo de aposta e valor */}
-      <div className="mb-4 flex flex-col gap-2">
+      <div className="flex flex-col gap-2 w-full max-w-xs">
         <p className="text-xs font-mono text-gold uppercase tracking-wider text-center">Tipo de aposta</p>
         <div className="grid grid-cols-5 gap-1">
           {colors.map(c => (
@@ -121,7 +112,7 @@ export default function GameRoulette({ onPlay, busy, balance }: {
         {/* Se for número, mostra grid 0-36 */}
         {betType === 'numero' && (
           <div className="mt-2">
-            <p className="text-xs font-mono text-gold uppercase tracking-wider mb-1">Escolha o número</p>
+            <p className="text-xs font-mono text-gold uppercase tracking-wider mb-1 text-center">Escolha o número</p>
             <div className="grid grid-cols-6 gap-1.5">
               {Array.from({ length: 37 }, (_, i) => i).map(n => {
                 const color = numberColor(n);
@@ -146,7 +137,7 @@ export default function GameRoulette({ onPlay, busy, balance }: {
 
       {/* Histórico */}
       {history.length > 0 && (
-        <div className="mb-4 overflow-x-auto">
+        <div className="overflow-x-auto w-full max-w-xs">
           <p className="text-xs font-mono text-gray-400 mb-1 uppercase tracking-wider">Histórico</p>
           <div className="flex gap-1.5">
             {history.map((h, i) => (
@@ -166,7 +157,7 @@ export default function GameRoulette({ onPlay, busy, balance }: {
       {/* Resultado */}
       {result && (
         <div
-          className={`mb-4 rounded-lg p-3 text-sm font-mono ${
+          className={`rounded-lg p-3 text-sm font-mono w-full max-w-xs ${
             result.won
               ? 'border border-green-500/50 bg-green-500/10 text-green-300 win-bloom'
               : 'border border-red-500/50 bg-red-500/10 text-red-300 loss-flash'
@@ -181,7 +172,7 @@ export default function GameRoulette({ onPlay, busy, balance }: {
       <button
         onClick={spin}
         disabled={spinning || balance < betAmount}
-        className="bet-btn w-full flex items-center justify-center gap-2"
+        className="bet-btn w-full max-w-xs flex items-center justify-center gap-2"
       >
         {spinning ? (
           <>
@@ -197,7 +188,7 @@ export default function GameRoulette({ onPlay, busy, balance }: {
       </button>
 
       {/* Info */}
-      <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-mono">
+      <div className="grid grid-cols-2 gap-2 text-xs font-mono w-full max-w-xs">
         <div className="stat-card p-2">
           <span className="stat-label text-[10px]">Aposta</span>
           <span className="stat-value text-sm">{formatBRL(betAmount)}</span>
@@ -209,7 +200,7 @@ export default function GameRoulette({ onPlay, busy, balance }: {
       </div>
 
       {/* Probabilidades */}
-      <div className="mt-4 text-[10px] font-mono text-gray-500 flex flex-wrap items-center gap-2 border-t border-gold/10 pt-3">
+      <div className="text-[10px] font-mono text-gray-500 flex flex-wrap items-center gap-2 border-t border-gold/10 pt-3 w-full max-w-xs">
         <span>Número: 1/37 (2.7%)</span>
         <span className="text-gray-600">|</span>
         <span>Par/Ímpar: 18/37 (48.6%)</span>

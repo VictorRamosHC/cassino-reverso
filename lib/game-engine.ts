@@ -123,8 +123,8 @@ export function playBlackjack(userId: string, bet: number) {
     resultText = `A BANCA VENCEU! ${playerScore} vs ${dealerScore} deles. Você perdeu R$ ${bet.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
   }
 
-  // Blackjack natural raro — paga 3x
-  if (playerScore === 21 && roll < 100) {
+  // Blackjack natural raro — paga 3x (apenas se jogador realmente tem 21 natural)
+  if (playerScore === 21 && outcome !== 'push') {
     outcome = 'win';
     multiplier = 3;
     resultText = `BLACKJACK! 21 exato! Pagamento 3x! Lucro: R$ ${Math.round(bet * 3).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
@@ -157,66 +157,81 @@ function shuffleDeck(deck: Array<{ rank: string; suit: string; value: number }>)
 }
 
 function handRank(cards: Array<{ rank: string; suit: string; value: number }>): { rank: number; name: string; highCard: number } {
-  const values = cards.map(c => c.value).sort((a,b) => b - a);
+  const values = cards.map(c => c.value).sort((a, b) => b - a);
   const suits = cards.map(c => c.suit);
 
-  const isFlush = suits[0] === suits[1] && suits[0] === suits[2] && suits[0] === suits[3] && suits[0] === suits[4];
+  const isFlush = suits.every(s => s === suits[0]);
 
-  // Royal/straight flush
-  if (isFlush && values[0] - values[4] === 4 && values[0] >= 10) {
-    return { rank: 9, name: 'Royal Straight Flush', highCard: values[0] };
-  }
-  if (isFlush) {
-    // Check straight flush (ace low)
-    if (values[0] === 14 && values[1] === 5 && values[2] === 4 && values[3] === 3 && values[4] === 2) {
-      return { rank: 8, name: 'Straight Flush (A-5)', highCard: 5 };
-    }
-    if (values[0] - values[4] === 4) {
-      return { rank: 8, name: 'Straight Flush', highCard: values[0] };
-    }
-    return { rank: 6, name: 'Flush', highCard: values[0] };
-  }
-
-  // Straights
-  if (values[0] - values[4] === 4) {
-    return { rank: 5, name: 'Straight', highCard: values[0] };
-  }
-  if (values[0] === 14 && values[1] === 5 && values[2] === 4 && values[3] === 3 && values[4] === 2) {
-    return { rank: 5, name: 'Straight (A-5)', highCard: 5 };
-  }
-
-  // Quads
-  for (let i = 0; i < 5; i++) {
-    for (let j = i + 1; j < 5; j++) {
-      if (values[i] === values[j]) {
-        return { rank: 8, name: 'Four of a Kind', highCard: values[i] };
-      }
-    }
-  }
-
-  // Full house / trips
+  // Count occurrences of each value
   const counts: Record<number, number> = {};
   for (const v of values) counts[v] = (counts[v] || 0) + 1;
-  const sortedCounts = Object.entries(counts).sort((a, b) => parseInt(b[1]) - parseInt(a[1]));
+  const groups = Object.entries(counts)
+    .map(([val, count]) => ({ val: +val, count }))
+    .sort((a, b) => b.count - a.count || b.val - a.val);
 
-  if (sortedCounts.length === 2 && (parseInt(sortedCounts[0][1]) === 3 && parseInt(sortedCounts[1][1]) === 2)) {
-    return { rank: 7, name: 'Full House', highCard: parseInt(sortedCounts[0][0]) };
-  }
-  if (sortedCounts.some(([, count]) => count === 3)) {
-    return { rank: 4, name: 'Three of a Kind', highCard: parseInt(sortedCounts.find(([, c]) => c === 3)![0]) };
+  // Straight detection
+  const uniqueValues = [...new Set(values)].sort((a, b) => b - a);
+  let isStraight = false;
+  let straightHigh = 0;
+  if (uniqueValues.length === 5) {
+    if (uniqueValues[0] - uniqueValues[4] === 4) {
+      isStraight = true;
+      straightHigh = uniqueValues[0];
+    }
+    // Ace-low straight (A-2-3-4-5)
+    if (uniqueValues[0] === 14 && uniqueValues[1] === 5 && uniqueValues[2] === 4 && uniqueValues[3] === 3 && uniqueValues[4] === 2) {
+      isStraight = true;
+      straightHigh = 5;
+    }
   }
 
-  // Two pair
-  if (sortedCounts.length === 3) {
-    return { rank: 3, name: 'Two Pair', highCard: Math.max(parseInt(sortedCounts[0][0]), parseInt(sortedCounts[1][0])) };
+  // Royal Flush
+  if (isFlush && isStraight && straightHigh === 14) {
+    return { rank: 9, name: 'Royal Flush', highCard: straightHigh };
+  }
+
+  // Straight Flush
+  if (isFlush && isStraight) {
+    return { rank: 8, name: 'Straight Flush', highCard: straightHigh };
+  }
+
+  // Four of a Kind
+  if (groups.length === 2 && groups[0].count === 4) {
+    return { rank: 7, name: 'Four of a Kind', highCard: groups[0].val };
+  }
+
+  // Full House
+  if (groups.length === 2 && groups[0].count === 3 && groups[1].count === 2) {
+    return { rank: 6, name: 'Full House', highCard: groups[0].val };
+  }
+
+  // Flush
+  if (isFlush) {
+    return { rank: 5, name: 'Flush', highCard: values[0] };
+  }
+
+  // Straight
+  if (isStraight) {
+    return { rank: 4, name: 'Straight', highCard: straightHigh };
+  }
+
+  // Three of a Kind
+  if (groups.length === 3 && groups[0].count === 3) {
+    return { rank: 3, name: 'Three of a Kind', highCard: groups[0].val };
+  }
+
+  // Two Pair
+  if (groups.length === 3 && groups[0].count === 2 && groups[1].count === 2) {
+    return { rank: 2, name: 'Two Pair', highCard: Math.max(groups[0].val, groups[1].val) };
   }
 
   // Pair
-  if (sortedCounts.length === 4) {
-    return { rank: 2, name: 'Pair', highCard: parseInt(sortedCounts[0][0]) };
+  if (groups.length === 4 && groups[0].count === 2) {
+    return { rank: 1, name: 'Pair', highCard: groups[0].val };
   }
 
-  return { rank: 1, name: 'High Card', highCard: values[0] };
+  // High Card
+  return { rank: 0, name: 'High Card', highCard: values[0] };
 }
 
 export function playPoker(userId: string, bet: number) {
