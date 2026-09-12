@@ -1,8 +1,18 @@
-# Cassino Reverso — App de Bets Educacionais
+# 🎰 Cassino Reverso — App de Bets Educacionais
 
-> **Quem perde menos, ganha.**  
-> Um app mobile de apostas onde a casa sempre tem vantagem — e o objetivo do jogador é sobreviver o máximo possível.  
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript)](https://typescriptlang.org)
+[![React](https://img.shields.io/badge/React-19-61dafb?logo=react)](https://react.dev)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.3-06b6d4?logo=tailwindcss)](https://tailwindcss.com)
+[![SQLite](https://img.shields.io/badge/SQLite-better--sqlite3-003B57?logo=sqlite)](https://www.sqlite.org)
+[![Vercel](https://img.shields.io/badge/Deploy-Vercel-000?logo=vercel)](https://cassino-reverso.vercel.app)
+[![License: GPL-3.0](https://img.shields.io/badge/Licença-GPL--3.0-green)](https://www.gnu.org/licenses/gpl-3.0)
+
+> **Quem perde menos, ganha.**
+> Um simulador educacional de cassino onde a casa sempre tem vantagem — e o objetivo do jogador é sobreviver o máximo possível.
 > Feito para a aula de educação financeira: mostrar na prática por que apostar é perda de dinheiro.
+
+---
 
 ---
 
